@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6-Month Body Challenge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f5f0;
+    --red: #e03030;
+    --green: #2ecc71;
+    --grey: #1a1a1a;
+    --grey2: #2a2a2a;
+    --grey3: #444;
+    --muted: #888;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+  }
+
+  .loading-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--black);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 100;
+  }
+
+  .loading-screen.hidden { display: none; }
+
+  .loading-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  .loading-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+
+  .sync-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    padding: 3px 7px;
+    border-radius: 20px;
+    border: 1px solid var(--grey3);
+    transition: all 0.3s;
+  }
+
+  .sync-badge.syncing { color: #f0a500; border-color: #f0a500; }
+  .sync-badge.synced { color: var(--green); border-color: var(--green); }
+  .sync-badge.error { color: var(--red); border-color: var(--red); }
+
+  .sync-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  header {
+    border-bottom: 1px solid var(--grey2);
+    padding-bottom: 20px;
+    margin-bottom: 28px;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: clamp(18px, 4vw, 26px);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+
+  h1 span { color: var(--red); }
+
+  .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  .meta {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.8;
+  }
+
+  .progress-bar-wrap { margin-top: 16px; }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 6px;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--grey2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--red);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .weight-strip {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .weight-card {
+    flex: 1;
+    min-width: 90px;
+    background: var(--grey);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+
+  .weight-card label {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    display: block;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .weight-card input {
+    background: transparent;
+    border: none;
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    width: 100%;
+    outline: none;
+  }
+
+  .weight-card input::placeholder { color: var(--grey3); }
+  .weight-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  .delta { font-family: 'Space Mono', monospace; font-size: 13px; margin-top: 4px; }
+  .delta.neg { color: var(--green); }
+  .delta.pos { color: var(--red); }
+
+  .week-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .week-nav button {
+    background: var(--grey);
+    border: none;
+    color: var(--white);
+    width: 36px; height: 36px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .week-nav button:hover { background: var(--grey2); }
+
+  .week-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--white);
+    flex: 1;
+  }
+
+  .week-label span {
+    display: block;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .week-score {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .week-score b { font-size: 18px; color: var(--white); }
+
+  .rules-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 24px;
+  }
+
+  .rule-row {
+    display: flex;
+    align-items: stretch;
+    background: var(--grey);
+    border-radius: 4px;
+    overflow: hidden;
+    min-height: 48px;
+  }
+
+  .rule-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    width: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-right: 1px solid var(--grey2);
+  }
+
+  .rule-text {
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    line-height: 1.3;
+  }
+
+  .rule-text small {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-top: 2px;
+  }
+
+  .days-row {
+    display: flex;
+    gap: 2px;
+    padding: 8px 10px;
+    flex-shrink: 0;
+  }
+
+  .day-btn {
+    width: 28px; height: 28px;
+    border-radius: 3px;
+    border: 1px solid var(--grey3);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    transition: all 0.12s;
+    flex-shrink: 0;
+  }
+
+  .day-btn:hover { border-color: var(--white); color: var(--white); }
+  .day-btn.done { background: var(--green); border-color: var(--green); color: var(--black); }
+  .day-btn.fail { background: var(--red); border-color: var(--red); color: var(--white); }
+
+  .summary-row {
+    background: var(--grey2);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .summary-item {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .summary-item b { display: block; font-size: 18px; color: var(--white); margin-bottom: 2px; }
+  .summary-item b.red { color: var(--red); }
+  .summary-item b.green { color: var(--green); }
+
+  .section-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .milestone-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: 28px; }
+
+  .milestone-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--grey);
+    border-radius: 4px;
+    font-size: 13px;
+    border-left: 3px solid transparent;
+  }
+
+  .milestone-item.achieved { border-left-color: var(--green); }
+
+  .milestone-date {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    width: 70px;
+    flex-shrink: 0;
+  }
+
+  .milestone-kg {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    width: 55px;
+  }
+
+  .milestone-status { font-size: 11px; color: var(--muted); margin-left: auto; }
+  .milestone-item.achieved .milestone-status { color: var(--green); }
+
+  .burned-weeks { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+  .week-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--grey3);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .week-dot.burned { background: var(--red); }
+
+  .reset-btn {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    border: 1px solid var(--grey3);
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.15s;
+  }
+
+  .reset-btn:hover { border-color: var(--red); color: var(--red); }
+
+  .note-area {
+    width: 100%;
+    background: var(--grey);
+    border: none;
+    border-radius: 4px;
+    color: var(--white);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    padding: 12px 14px;
+    resize: none;
+    outline: none;
+    min-height: 70px;
+    margin-top: 8px;
+  }
+
+  .note-area::placeholder { color: var(--grey3); }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading">
+  <div class="loading-dot"></div>
+  <div class="loading-text">CARICAMENTO DATI...</div>
+</div>
+
+<header>
+  <div class="header-top">
+    <h1>6-MONTH<br><span>BODY CHALLENGE</span></h1>
+    <div class="header-right">
+      <div class="sync-badge" id="sync-badge">
+        <div class="sync-dot"></div>
+        <span id="sync-label">SYNC</span>
+      </div>
+      <div class="meta">
+        START: 22.06.2026<br>
+        END: 31.12.2026<br>
+        <span id="days-elapsed">—</span>
+      </div>
+    </div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-label">
+      <span>GIORNO 1</span>
+      <span id="progress-pct">0%</span>
+      <span>GIORNO 193</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+</header>
+
+<div class="weight-strip">
+  <div class="weight-card">
+    <label>START</label>
+    <div class="weight-val">88 kg</div>
+  </div>
+  <div class="weight-card">
+    <label>OGGI</label>
+    <input type="number" id="weight-today" placeholder="—" step="0.1" min="60" max="120">
+  </div>
+  <div class="weight-card">
+    <label>OBIETTIVO</label>
+    <div class="weight-val">80 kg</div>
+  </div>
+  <div class="weight-card">
+    <label>DELTA</label>
+    <div class="weight-val" id="weight-delta">—</div>
+    <div class="delta" id="weight-remaining"></div>
+  </div>
+</div>
+
+<div class="week-nav">
+  <button onclick="changeWeek(-1)">&#8592;</button>
+  <div class="week-label">
+    <span id="week-label-main">SETTIMANA 1</span>
+    <span id="week-label-dates"></span>
+  </div>
+  <div class="week-score"><b id="week-score-num">—</b>/70</div>
+  <button onclick="changeWeek(1)">&#8594;</button>
+</div>
+
+<div class="rules-grid" id="rules-grid"></div>
+
+<div class="summary-row">
+  <div class="summary-item"><b id="sum-done" class="green">—</b>CHECK TOTALI</div>
+  <div class="summary-item"><b id="sum-violations" class="red">—</b>VIOLAZIONI</div>
+  <div class="summary-item"><b id="sum-pct">—</b>% SETTIMANA</div>
+</div>
+
+<div class="section-title">NOTE SETTIMANA</div>
+<textarea class="note-area" id="week-note" placeholder="Annotazioni, difficoltà, osservazioni..."></textarea>
+
+<br><br>
+
+<div class="section-title">MILESTONE PESO</div>
+<div class="milestone-list" id="milestone-list"></div>
+
+<div class="section-title">SETTIMANE BRUCIATE (max 3)</div>
+<div class="burned-weeks" id="burned-dots"></div>
+<div style="font-size:11px;color:var(--muted);margin-top:8px;font-family:'Space Mono',monospace;">
+  3 settimane bruciate = restart dal giorno 1
+</div>
+
+<button class="reset-btn" onclick="confirmReset()">RESET CHALLENGE</button>
+
+<script>
+const RULES = [
+  { id: 1, text: "Schema nutrizionista", sub: "Porzioni e pasti esatti, nessuna deviazione" },
+  { id: 2, text: "2,5 litri d'acqua", sub: null },
+  { id: 3, text: "Zero alcol", sub: "Eccezione: 1x/mese, pianificata il lunedì" },
+  { id: 4, text: "Zero dolci / junk food", sub: "Eccezione: 1x/mese, pianificata il lunedì" },
+  { id: 5, text: "Whey 30g + Creatina 5g", sub: null },
+  { id: 6, text: "Allenamento", sub: "5 sessioni/sett, min 2 outdoor" },
+  { id: 7, text: "Pesata lunedì mattina", sub: "Loggata su MyFitnessPal" },
+  { id: 8, text: "Foto progress", sub: "Stessa ora, stesso posto" },
+  { id: 9, text: "10 pagine lettura non fiction", sub: null },
+  { id: 10, text: "30 min meditazione", sub: null },
+];
+
+const DAYS = ["L","M","M","G","V","S","D"];
+const MILESTONES = [
+  { date: "31.07", kg: 86 },
+  { date: "31.08", kg: 85 },
+  { date: "30.09", kg: 84 },
+  { date: "31.10", kg: 83 },
+  { date: "30.11", kg: 82 },
+  { date: "31.12", kg: 80 },
+];
+
+const START = new Date("2026-06-22");
+const TOTAL_DAYS = 193;
+const STORAGE_KEY = "bchallenge_v2";
+
+// --- Supabase config ---
+const SUPABASE_URL = "https://oxisojxvmegtizmndtts.supabase.co";
+const SUPABASE_KEY = "sb_publishable_1wb5RBWOGwjZVnkm3zuJWw_34GsLjUW";
+const ROW_ID = "pasquale"; // single shared row for this challenge
+const REST = `${SUPABASE_URL}/rest/v1/challenge_state`;
+const SB_HEADERS = {
+  "apikey": SUPABASE_KEY,
+  "Authorization": `Bearer ${SUPABASE_KEY}`,
+  "Content-Type": "application/json",
+};
+
+let state = {
+  currentWeek: 1,
+  weeks: {},
+  weightToday: null,
+  burnedWeeks: 0,
+};
+
+let currentWeek = 1;
+let saveTimer = null;
+
+// cloudOK: true if Supabase is reachable and writable.
+let cloudOK = false;
+
+// Sync badge
+function setSyncState(s) {
+  const badge = document.getElementById("sync-badge");
+  const label = document.getElementById("sync-label");
+  badge.className = "sync-badge " + s;
+  if (s === "syncing") label.textContent = "SALVATAGGIO";
+  else if (s === "synced") label.textContent = cloudOK ? "SINCRONIZZATO" : "SALVATO";
+  else if (s === "error") label.textContent = "ERRORE SYNC";
+  else label.textContent = cloudOK ? "CLOUD" : "LOCALE";
+}
+
+function readLocal() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function writeLocal() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+async function cloudRead() {
+  const url = `${REST}?id=eq.${ROW_ID}&select=data`;
+  const res = await fetch(url, { headers: SB_HEADERS });
+  if (!res.ok) throw new Error("read failed " + res.status);
+  const rows = await res.json();
+  if (rows.length && rows[0].data) return rows[0].data;
+  return null;
+}
+
+async function cloudWrite() {
+  // Upsert the single row
+  const res = await fetch(`${REST}?on_conflict=id`, {
+    method: "POST",
+    headers: { ...SB_HEADERS, "Prefer": "resolution=merge-duplicates" },
+    body: JSON.stringify({ id: ROW_ID, data: state, updated_at: new Date().toISOString() }),
+  });
+  if (!res.ok) throw new Error("write failed " + res.status);
+}
+
+async function loadState() {
+  let loaded = null;
+  try {
+    loaded = await cloudRead();
+    cloudOK = true;
+  } catch (e) {
+    cloudOK = false;
+  }
+  // Fall back to local if cloud unreachable or empty
+  if (!loaded) {
+    const local = readLocal();
+    if (local) loaded = local;
+  }
+  if (loaded) {
+    state = loaded;
+    currentWeek = state.currentWeek || 1;
+  }
+}
+
+async function saveState() {
+  setSyncState("syncing");
+  // Always keep a local copy as safety net
+  writeLocal();
+
+  try {
+    await cloudWrite();
+    cloudOK = true;
+    setSyncState("synced");
+  } catch (e) {
+    cloudOK = false;
+    setSyncState("synced"); // shows "SALVATO" (local) instead of a scary error
+  }
+  setTimeout(() => setSyncState(""), 1500);
+}
+
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveState, 800);
+}
+
+function getWeekData(w) {
+  if (!state.weeks[w]) state.weeks[w] = { checks: {}, note: "" };
+  return state.weeks[w];
+}
+
+function getWeekDates(weekNum) {
+  const start = new Date(START);
+  start.setDate(start.getDate() + (weekNum - 1) * 7);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const fmt = d => `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}`;
+  return `${fmt(start)} - ${fmt(end)}`;
+}
+
+function toggleDay(ruleId, dayIdx) {
+  const wd = getWeekData(currentWeek);
+  const key = `${ruleId}_${dayIdx}`;
+  const cur = wd.checks[key] || 0;
+  wd.checks[key] = cur === 0 ? 1 : cur === 1 ? 2 : 0;
+  scheduleSave();
+  renderRules();
+  renderSummary();
+}
+
+function renderRules() {
+  const grid = document.getElementById("rules-grid");
+  const wd = getWeekData(currentWeek);
+  grid.innerHTML = "";
+
+  RULES.forEach(rule => {
+    const row = document.createElement("div");
+    row.className = "rule-row";
+    row.innerHTML = `
+      <div class="rule-num">${String(rule.id).padStart(2,"0")}</div>
+      <div class="rule-text">
+        ${rule.text}
+        ${rule.sub ? `<small>${rule.sub}</small>` : ""}
+      </div>
+      <div class="days-row" id="days-${rule.id}"></div>
+    `;
+    grid.appendChild(row);
+
+    const daysContainer = row.querySelector(`#days-${rule.id}`);
+    DAYS.forEach((d, i) => {
+      const btn = document.createElement("button");
+      btn.className = "day-btn";
+      const val = wd.checks[`${rule.id}_${i}`] || 0;
+      if (val === 1) btn.classList.add("done");
+      if (val === 2) btn.classList.add("fail");
+      btn.textContent = d;
+      btn.onclick = () => toggleDay(rule.id, i);
+      daysContainer.appendChild(btn);
+    });
+  });
+}
+
+function renderSummary() {
+  const wd = getWeekData(currentWeek);
+  let done = 0, violations = 0, total = 0;
+  RULES.forEach(rule => {
+    DAYS.forEach((_, i) => {
+      const val = wd.checks[`${rule.id}_${i}`] || 0;
+      if (val === 1) { done++; total++; }
+      else if (val === 2) { violations++; total++; }
+    });
+  });
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById("sum-done").textContent = done;
+  document.getElementById("sum-violations").textContent = violations;
+  document.getElementById("sum-pct").textContent = pct + "%";
+  document.getElementById("week-score-num").textContent = done;
+}
+
+function renderWeekNav() {
+  const totalWeeks = Math.ceil(TOTAL_DAYS / 7);
+  document.getElementById("week-label-main").textContent = `SETTIMANA ${currentWeek} / ${totalWeeks}`;
+  document.getElementById("week-label-dates").textContent = getWeekDates(currentWeek);
+}
+
+function renderProgress() {
+  const now = new Date();
+  const elapsed = Math.max(0, Math.floor((now - START) / 86400000));
+  const pct = Math.min(100, Math.round((elapsed / TOTAL_DAYS) * 100));
+  document.getElementById("days-elapsed").textContent = `GIORNO ${Math.min(elapsed + 1, TOTAL_DAYS)}`;
+  document.getElementById("progress-pct").textContent = pct + "%";
+  document.getElementById("progress-fill").style.width = pct + "%";
+}
+
+function renderWeight() {
+  const w = state.weightToday;
+  if (!w) return;
+  document.getElementById("weight-today").value = w;
+  const delta = (w - 88).toFixed(1);
+  const remaining = (w - 80).toFixed(1);
+  const deltaEl = document.getElementById("weight-delta");
+  deltaEl.textContent = (delta > 0 ? "+" : "") + delta + " kg";
+  const remEl = document.getElementById("weight-remaining");
+  if (remaining > 0) {
+    remEl.textContent = "-" + remaining + " kg all'obiettivo";
+    remEl.className = "delta neg";
+  } else {
+    remEl.textContent = "OBIETTIVO RAGGIUNTO";
+    remEl.className = "delta neg";
+  }
+}
+
+function renderMilestones() {
+  const list = document.getElementById("milestone-list");
+  list.innerHTML = "";
+  const w = state.weightToday || 88;
+  MILESTONES.forEach(m => {
+    const item = document.createElement("div");
+    item.className = "milestone-item" + (w <= m.kg ? " achieved" : "");
+    item.innerHTML = `
+      <span class="milestone-date">${m.date}</span>
+      <span class="milestone-kg">${m.kg} kg</span>
+      <span class="milestone-status">${w <= m.kg ? "RAGGIUNTO" : "—"}</span>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function renderBurnedDots() {
+  const container = document.getElementById("burned-dots");
+  container.innerHTML = "";
+  for (let i = 0; i < 3; i++) {
+    const dot = document.createElement("div");
+    dot.className = "week-dot" + (i < state.burnedWeeks ? " burned" : "");
+    dot.onclick = () => {
+      state.burnedWeeks = state.burnedWeeks === i + 1 ? i : i + 1;
+      scheduleSave();
+      renderBurnedDots();
+    };
+    container.appendChild(dot);
+  }
+}
+
+function renderNote() {
+  const wd = getWeekData(currentWeek);
+  const ta = document.getElementById("week-note");
+  ta.value = wd.note || "";
+  ta.oninput = () => {
+    getWeekData(currentWeek).note = ta.value;
+    scheduleSave();
+  };
+}
+
+function render() {
+  renderProgress();
+  renderWeekNav();
+  renderRules();
+  renderSummary();
+  renderWeight();
+  renderMilestones();
+  renderBurnedDots();
+  renderNote();
+}
+
+function changeWeek(dir) {
+  const totalWeeks = Math.ceil(TOTAL_DAYS / 7);
+  currentWeek = Math.max(1, Math.min(totalWeeks, currentWeek + dir));
+  state.currentWeek = currentWeek;
+  scheduleSave();
+  render();
+}
+
+function confirmReset() {
+  if (confirm("Reset completo del challenge? Tutti i dati verranno cancellati.")) {
+    state = { currentWeek: 1, weeks: {}, weightToday: null, burnedWeeks: 0 };
+    currentWeek = 1;
+    saveState();
+    render();
+  }
+}
+
+document.getElementById("weight-today").addEventListener("change", function() {
+  const val = parseFloat(this.value);
+  if (!isNaN(val) && val > 50 && val < 150) {
+    state.weightToday = val;
+    scheduleSave();
+    renderWeight();
+    renderMilestones();
+  }
+});
+
+// Init
+(async () => {
+  await loadState();
+  document.getElementById("loading").classList.add("hidden");
+  render();
+  setSyncState("synced");
+  setTimeout(() => setSyncState(""), 1500);
+})();
+</script>
+</body>
+</html>
